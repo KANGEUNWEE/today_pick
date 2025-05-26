@@ -1,115 +1,85 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useEffect, useContext } from 'react'
+import axios from 'axios'
+import { useRouter } from 'next/router'
+import { UserContext } from 'src/contexts/UserContext'
 
 export default function Home() {
-  return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+  const router = useRouter()
+  const { user } = useContext(UserContext)
+  const [food, setFood] = useState<string>('')
+  const [score, setScore] = useState<number>(0)
+
+  useEffect(() => {
+    if (!user) {
+      alert('로그인이 필요합니다.')
+      router.push('/auth/login')
+    }
+  }, [user])
+
+  const getRecommendation = async () => {
+    try {
+      const res = await axios.get('/api/recommend') as { data: { food: string } }
+      const recommended = res.data.food || '김치찌개'
+      setFood(recommended)
+    } catch (err) {
+      console.error('추천 오류:', err)
+    }
+  }
+
+  const submitRating = async () => {
+    try {
+      await axios.post('/api/rate', { food, score })
+      if (score <= 2.5) {
+        setTimeout(() => alert('새로운 추천이 도착했어요!'), 300)
+        await getRecommendation()
+        setScore(0)
+      } else {
+        alert('별점이 저장되었습니다.')
+      }
+    } catch (err) {
+      console.error('평가 오류:', err)
+    }
+  }
+
+  const retry = async () => {
+    try {
+      const res = await axios.post('/api/retry', { food, score }) as { data: { food: string } }
+      const newFood = res.data.food || '비빔밥'
+      setFood(newFood)
+      setScore(0)
+    } catch (err) {
+      console.error('재추천 오류:', err)
+    }
+  }
+
+ return (
+    <main style={{ padding: '2rem' }}>
+      <h1>🍱 오늘 뭐 먹지?</h1>
+      {user && <p>👤 {user.name}님</p>}
+
+      <button onClick={getRecommendation}>음식 추천 받기</button>
+
+      {food && (
+        <>
+          <p>추천 음식: <strong>{food}</strong></p>
+          <input
+            type="number"
+            min="0"
+            max="5"
+            step="0.5"
+            value={score}
+            onChange={(e) => setScore(Number(e.target.value))}
+            placeholder="별점 입력 (0~5)"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+          <button onClick={submitRating}>⭐ 별점 제출</button>
+
+          {score > 0 && score <= 2.5 && (
+            <button onClick={retry} style={{ marginLeft: '1rem' }}>
+              🔁 재추천 요청
+            </button>
+          )}
+        </>
+      )}
+    </main>
+  )
 }
