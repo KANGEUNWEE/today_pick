@@ -1,40 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 declare global {
-  interface Window {
-    kakao: {
-      maps: {
-        load(callback: () => void): void
-        services: {
-          Places: new () => PlacesService
-          Status: {
-            OK: string
-            ERROR: string
-            ZERO_RESULT: string
-          }
-        }
-      }
-    }
-  }
-}
-
-interface KakaoPlace {
-  id: string
-  place_name: string
-  address_name: string
-  road_address_name: string
-  phone: string
-  category_name: string
-  place_url: string
-  x: string
-  y: string
-}
-
-interface PlacesService {
-  keywordSearch(
-    keyword: string,
-    callback: (result: KakaoPlace[], status: string) => void
-  ): void
+ 
 }
 
 export default function KakaoMapPage() {
